@@ -131,7 +131,18 @@ function exportCSV(){let cols=['日期','類型','項目','分類','金額','帳
 function saveDraft(){let amount=+$('#amount').value,description=$('#description').value.trim(),date=$('#date').value;if(!amount||amount<=0||!description||!date){toast('請確認金額、項目與日期');return}let tx={...draft,amount,description,date,account:$('#account').value,invoiceNo:$('#invoice').value.trim(),note:$('#note').value.trim(),createdAt:draft.createdAt||new Date().toISOString()};if(draft.id){let i=data.transactions.findIndex(x=>x.id===draft.id);if(i>=0)data.transactions[i]=tx}else{tx.id='tx-'+Date.now();data.transactions.push(tx)}save();draft=null;tab='home';render();toast('紀錄已儲存')}
 function parseCSV(text){let rows=[],row=[],v='',q=false;for(let i=0;i<text.length;i++){let c=text[i];if(q){if(c==='"'&&text[i+1]==='"'){v+='"';i++}else if(c==='"')q=false;else v+=c}else if(c==='"')q=true;else if(c===','){row.push(v);v=''}else if(c==='\n'){row.push(v);rows.push(row);row=[];v=''}else if(c!=='\r')v+=c}row.push(v);if(row.some(Boolean))rows.push(row);return rows}
 $('#app').addEventListener('click',e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.tab){tab=b.dataset.tab;render();return}if(b.dataset.edit){let t=data.transactions.find(x=>x.id===b.dataset.edit);if(t){draft={...t};tab='add';render()}return}let a=b.dataset.action;if(a){switch(a){case'quick-save':{let n=+$('#quickamount').value;if(n<=0){toast('請輸入金額');break}data.transactions.push({id:'tx-'+Date.now(),type:kind,amount:n,category:selectedCat||data.categories[kind][0],description:selectedCat||data.categories[kind][0],date:today(),account:'現金',invoiceNo:'',note:''});save();render();toast('快速記帳完成');break}case'save':saveDraft();break;case'cancel':draft=null;tab='home';render();break;case'delete':if(confirm('確定刪除這筆紀錄？')){data.transactions=data.transactions.filter(x=>x.id!==draft.id);save();draft=null;tab='records';render();toast('紀錄已刪除')}break;case'prev':month=new Date(+month.slice(0,4),+month.slice(5)-2,1).toISOString().slice(0,7);render();break;case'next':month=new Date(+month.slice(0,4),+month.slice(5),1).toISOString().slice(0,7);render();break;case'budget':{let v=prompt('設定 '+month+' 的支出預算（0 清除）',data.budgets[month]||'');if(v!==null&&Number(v)>=0){if(+v)data.budgets[month]=+v;else delete data.budgets[month];save();render()}break}case'categories':categoryModal();break;case'cat-add':{let n=prompt('新增分類名稱');if(n?.trim()&&!data.categories[kind].includes(n.trim()))data.categories[kind].push(n.trim());save();categoryModal(kind);break}case'goal-add':goalEdit();break;case'export-json':exportJSON();break;case'export-csv':exportCSV();break;case'import-json':$('#jsonfile').click();break;case'import-csv':$('#csvfile').click();break;case'close':close();break}}
-if(b.dataset.qtype){kind=b.dataset.qtype;$('#app [data-qtype]').forEach(x=>{let active=x.dataset.qtype===kind;x.classList.toggle('on',active);x.setAttribute('aria-pressed',String(active))});selectedCat='';let cs=data.categories[kind].slice(0,5);$('#quickcats').innerHTML=cs.map((c,i)=>'<button class="chip '+(!i?'on':'')+'" data-qcat="'+safe(c)+'">'+icon(c)+' '+safe(c)+'</button>').join('');selectedCat=cs[0]||''}
+if(b.dataset.qtype){
+  kind=b.dataset.qtype;
+  document.querySelectorAll('#app [data-qtype]').forEach(x=>{
+    const active=x.dataset.qtype===kind;
+    x.classList.toggle('on',active);
+    x.setAttribute('aria-pressed',String(active));
+  });
+  selectedCat='';
+  const cs=data.categories[kind].slice(0,5);
+  $('#quickcats').innerHTML=cs.map((c,index)=>'<button class="chip '+(!index?'on':'')+'" data-qcat="'+safe(c)+'">'+icon(c)+' '+safe(c)+'</button>').join('');
+  selectedCat=cs[0]||'';
+}
 if(b.dataset.qcat){selectedCat=b.dataset.qcat;$$('#quickcats .chip').forEach(x=>x.classList.toggle('on',x===b))}
 if(b.dataset.type){syncDraft();draft.type=b.dataset.type;draft.category=data.categories[draft.type][0];render()}
 if(b.dataset.cat){draft.category=b.dataset.cat;$$('#app .chip[data-cat]').forEach(x=>x.classList.toggle('on',x===b))}
