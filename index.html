@@ -56,6 +56,39 @@ if(b.dataset.goalDel){if(confirm('刪除這個目標？')){data.goals=data.goals
 function $$(s){return [...document.querySelectorAll(s)]}
 function syncDraft(){if(!draft)return;draft.amount=$('#amount')?.value||'';draft.description=$('#description')?.value||'';draft.date=$('#date')?.value||draft.date;draft.account=$('#account')?.value||draft.account;draft.invoiceNo=$('#invoice')?.value||'';draft.note=$('#note')?.value||''}
 function goalEdit(g){let name=prompt('目標名稱',g?.name||'旅行基金');if(name===null)return;let target=+prompt('目標金額',g?.target||20000);if(!name.trim()||target<=0)return;let saved=+prompt('目前已存金額',g?.saved||0);let obj={id:g?.id||'goal-'+Date.now(),name:name.trim(),target,saved:Math.max(0,saved),emoji:g?.emoji||'🎯'};if(g)data.goals=data.goals.map(x=>x.id===g.id?obj:x);else data.goals.push(obj);save();render()}
+$('#nav').addEventListener('click',e=>{
+  const b=e.target.closest('[data-tab]');
+  if(!b)return;
+  tab=b.dataset.tab;
+  render();
+});
+$('#sheet').addEventListener('click',e=>{
+  const b=e.target.closest('button');
+  if(!b)return;
+  if(b.dataset.action==='close'){close();return;}
+  if(b.dataset.catKind){categoryModal(b.dataset.catKind);return;}
+  if(b.dataset.action==='cat-add'){
+    const n=prompt('新增分類名稱');
+    if(n&&n.trim()&&!data.categories[kind].includes(n.trim()))data.categories[kind].push(n.trim());
+    save();categoryModal(kind);return;
+  }
+  if(b.dataset.catEdit){
+    const old=b.dataset.catEdit,n=prompt('修改分類名稱',old)?.trim();
+    if(n&&n!==old&&!data.categories[kind].includes(n)){
+      data.categories[kind]=data.categories[kind].map(x=>x===old?n:x);
+      data.transactions.forEach(t=>{if(t.type===kind&&t.category===old)t.category=n;});
+      save();categoryModal(kind);
+    }
+    return;
+  }
+  if(b.dataset.catDel){
+    const old=b.dataset.catDel;
+    if(confirm('刪除分類 '+old+'？既有交易不會刪除。')){
+      data.categories[kind]=data.categories[kind].filter(x=>x!==old);
+      save();categoryModal(kind);
+    }
+  }
+});
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')close()});
 $('#app').addEventListener('input',e=>{if(e.target.id==='search'){query=e.target.value;let pos=e.target.selectionStart;render();let f=$('#search');f.focus();f.setSelectionRange(pos,pos)}});
 $('#jsonfile').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result),s=d.data||d;if(!Array.isArray(s.transactions)||!s.categories)throw Error('格式不正確');if(confirm('以備份內容取代目前帳本？取消則合併紀錄。'))data={transactions:s.transactions,categories:s.categories,goals:s.goals||[],budgets:s.budgets||{}};else{let ids=new Set(data.transactions.map(x=>x.id));s.transactions.forEach(x=>{if(!ids.has(x.id))data.transactions.push(x)});['expense','income'].forEach(k=>(s.categories[k]||[]).forEach(c=>{if(!data.categories[k].includes(c))data.categories[k].push(c)}));data.goals.push(...(s.goals||[]).filter(g=>!data.goals.some(x=>x.id===g.id)));Object.assign(data.budgets,s.budgets||{})}save();render();toast('備份已匯入')}catch(err){alert('匯入失敗：'+err.message)}e.target.value=''};r.readAsText(f)});
