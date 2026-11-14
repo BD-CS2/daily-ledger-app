@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "日序｜日常記帳",
+  "short_name": "日序記帳",
+  "description": "簡單記錄日常收入支出，追蹤預算與理財目標。資料保存在自己的裝置。",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9f6",
+  "theme_color": "#f8f9f6",
+  "icons": [
+    { "src": "./assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
